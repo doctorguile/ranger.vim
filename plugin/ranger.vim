@@ -44,6 +44,10 @@ if !exists('s:choice_file_path')
   let s:choice_file_path = '/tmp/chosenfile'
 endif
 
+if !exists('s:choice_dir_path')
+  let s:choice_dir_path = '/tmp/chosendir'
+endif
+
 if has('nvim')
   function! OpenRangerIn(path, edit_cmd)
     let currentPath = expand(a:path)
@@ -53,6 +57,10 @@ if has('nvim')
         silent! Bclose!
       endif
       try
+        if filereadable(s:choice_dir_path)
+          exec " cd " . readfile(s:choice_dir_path)[0]
+          call delete(s:choice_dir_path)
+        endif
         if filereadable(s:choice_file_path)
           for f in readfile(s:choice_file_path)
             exec self.edit_cmd . f
@@ -63,9 +71,9 @@ if has('nvim')
     endfunction
     enew
     if isdirectory(currentPath)
-      call termopen(s:ranger_command . ' --choosefiles=' . s:choice_file_path . ' "' . currentPath . '"', rangerCallback)
+      call termopen(s:ranger_command . ' --choosedir=' . s:choice_dir_path . ' --choosefiles=' . s:choice_file_path . ' "' . currentPath . '"', rangerCallback)
     else
-      call termopen(s:ranger_command . ' --choosefiles=' . s:choice_file_path . ' --selectfile="' . currentPath . '"', rangerCallback)
+      call termopen(s:ranger_command . ' --choosedir=' . s:choice_dir_path . ' --choosefiles=' . s:choice_file_path . ' --selectfile="' . currentPath . '"', rangerCallback)
     endif
     startinsert
   endfunction
@@ -73,9 +81,13 @@ else
   function! OpenRangerIn(path, edit_cmd)
     let currentPath = expand(a:path)
     if isdirectory(currentPath)
-      silent exec '!' . s:ranger_command . ' --choosefiles=' . s:choice_file_path . ' "' . currentPath . '"'
+      silent exec '!' . s:ranger_command . ' --choosedir=' . s:choice_dir_path . ' --choosefiles=' . s:choice_file_path . ' "' . currentPath . '"'
     else
-      silent exec '!' . s:ranger_command . ' --choosefiles=' . s:choice_file_path . ' --selectfile="' . currentPath . '"'
+      silent exec '!' . s:ranger_command . ' --choosedir=' . s:choice_dir_path . ' --choosefiles=' . s:choice_file_path . ' --selectfile="' . currentPath . '"'
+    endif
+    if filereadable(s:choice_dir_path)
+      exec " cd " . readfile(s:choice_dir_path)[0]
+      call delete(s:choice_dir_path)
     endif
     if filereadable(s:choice_file_path)
       for f in readfile(s:choice_file_path)
